@@ -1,4 +1,5 @@
-package com.newscenter.entity;
+package com.newscenter.demo.entity;
+
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -29,7 +30,7 @@ public class UserEntity implements Serializable{
         this.u_id = u_id;
     }
 
-    public String getU_name() {
+    public String getu_name() {
         return u_name;
     }
 
@@ -37,7 +38,7 @@ public class UserEntity implements Serializable{
         this.u_name = u_name;
     }
 
-    public String getU_password() {
+    public String getu_password() {
         return u_password;
     }
 
