@@ -33,7 +33,7 @@ public class UserController {
      * @return
      */
     @PostMapping(value = "/register")
-    public HttpResult register(@RequestBody UserEntity entity){
+    public HttpResult<UserEntity> register(@RequestBody UserEntity entity){
         String username = entity.getu_name();
         String password = entity.getu_password();
 
@@ -55,6 +55,7 @@ public class UserController {
             if (save != null){
                 httpResult.setCode(1);
                 httpResult.setMessage("注册成功!");
+                httpResult.setData(entity);
             }else {
                 httpResult.setCode(-1);
                 httpResult.setMessage("注册失败!");
@@ -65,9 +66,39 @@ public class UserController {
         return httpResult;
     }
 
-    @RequestMapping(value = "/login",method = RequestMethod.GET)
-    public String login(){
-        return "登录成功!";
+    @PostMapping(value = "/login")
+    public HttpResult<UserEntity> login(@RequestBody UserEntity userEntity){
+        String username = userEntity.getu_name();
+        String password = userEntity.getu_password();
+
+        QUserEntity qUserEntity = QUserEntity.userEntity;
+        JPAQuery<UserEntity> jpaQuery = new JPAQuery<>(mManager);
+
+        //此账号已经存在，注册失败
+        List<UserEntity> fetch = jpaQuery.select(qUserEntity)
+                .from(qUserEntity)
+                .where(qUserEntity.u_name.eq(username))
+                .fetch();
+        HttpResult httpResult = new HttpResult();
+        if (fetch == null || fetch.size() <= 0){
+            //没有此账号，需要先登录
+            httpResult.setCode(-1);
+            httpResult.setMessage("此账号还没有注册，请先注册");
+        }else {
+            List<UserEntity> result = jpaQuery.select(qUserEntity)
+                    .from(qUserEntity)
+                    .where(qUserEntity.u_name.eq(username),qUserEntity.u_password.eq(password))
+                    .fetch();
+            if (result != null && result.size() > 0){
+                httpResult.setCode(1);
+                httpResult.setMessage("登陆成功!");
+                httpResult.setData(userEntity);
+            }else {
+                httpResult.setCode(-1);
+                httpResult.setMessage("密码不正确");
+            }
+        }
+        return httpResult;
     }
 
 }
