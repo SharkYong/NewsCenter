@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Iterator;
 import java.util.List;
 
 import javax.persistence.EntityManager;
@@ -35,32 +36,71 @@ public class NewsController {
     private EntityManager mManager;
 
     @RequestMapping(value = "/news")
-    public HttpResult<List<NewsEntity>> getTopNews(String type){
+    public HttpResult<List<NewsEntity>> getTopNews(String type,boolean isrefresh){
 
         HttpResult<List<NewsEntity>>httpResult = new HttpResult<>();
         QNewsEntity qNewsEntity = QNewsEntity.newsEntity;
         JPAQuery<NewsEntity> jpaQuery = new JPAQuery<>(mManager);
 
+        if (isrefresh){
+            getDataFromAPI(type,httpResult);
+        }else {
+            //从数据库获取type类型的新闻
+            List<NewsEntity> fetch = jpaQuery.select(qNewsEntity)
+                    .from(qNewsEntity)
+                    .where(qNewsEntity.category.eq(type))
+                    .fetch();
+            if (fetch == null || fetch.size() <= 0){
+                getDataFromAPI(type,httpResult);
+            }else {
+                httpResult.setMessage("获取新闻成功!");
+                httpResult.setCode(1);
+                httpResult.setData(fetch);
+            }
+        }
+
+        return httpResult;
+    }
+
+    public void getDataFromAPI(String type,HttpResult<List<NewsEntity>>httpResult){
+        String value = mNewsApi.getdis(newsKey, type);
+        JSONObject jsonObject = JSONObject.parseObject(value);
+        JSONObject result = jsonObject.getJSONObject("result");
+        JSONArray data = result.getJSONArray("data");
+        List<NewsEntity> newsEntities = data.toJavaList(NewsEntity.class);
+        httpResult.setData(newsEntities);
+        httpResult.setCode(1);
+        httpResult.setMessage("获取新闻成功!");
+        //最后需要放置到数据库中
+        for (NewsEntity newsEntity:newsEntities){
+            newsEntity.setCategory(type);
+        }
+
+        QNewsEntity qNewsEntity = QNewsEntity.newsEntity;
+        JPAQuery<NewsEntity> jpaQuery = new JPAQuery<>(mManager);
         //从数据库获取type类型的新闻
         List<NewsEntity> fetch = jpaQuery.select(qNewsEntity)
                 .from(qNewsEntity)
                 .where(qNewsEntity.category.eq(type))
                 .fetch();
         if (fetch == null || fetch.size() <= 0){
-            String value = mNewsApi.getdis(newsKey, type);
-            JSONObject jsonObject = JSONObject.parseObject(value);
-            JSONObject result = jsonObject.getJSONObject("result");
-            JSONArray data = result.getJSONArray("data");
-            List<NewsEntity> newsEntities = data.toJavaList(NewsEntity.class);
-            httpResult.setData(newsEntities);
-            httpResult.setCode(1);
-            httpResult.setMessage("获取新闻成功!");
+            mNewsJPA.save(newsEntities);
         }else {
+            //遍历本地数据库,如果此条新闻已经存在，则删除
+            for (NewsEntity newsLocal:fetch){
+                for (Iterator<NewsEntity> iterator = newsEntities.iterator();iterator.hasNext();){
+                    NewsEntity newsServer = iterator.next();
+                    if (newsServer.getTitle().equals(newsLocal.getTitle())){
+                        iterator.remove();
+                    }
+                }
+            }
+            mNewsJPA.delete(fetch);
+            fetch.addAll(0,newsEntities);
+            mNewsJPA.save(fetch);
             httpResult.setMessage("获取新闻成功!");
             httpResult.setCode(1);
             httpResult.setData(fetch);
         }
-
-        return httpResult;
     }
 }
