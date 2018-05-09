@@ -13,15 +13,14 @@ import com.querydsl.jpa.impl.JPAQuery;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpRequest;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Iterator;
 import java.util.List;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import javax.validation.Valid;
 
 @RestController
 @RequestMapping()
@@ -103,4 +102,17 @@ public class NewsController {
             httpResult.setData(fetch);
         }
     }
+
+    //新闻发布
+    @PostMapping(value = "/news")
+    public NewsEntity addNews(@Valid NewsEntity news){
+        return mNewsJPA.save(news);
+    }
+
+    //根据ID删除新闻
+    @DeleteMapping(value = "/news/{id}")
+    public void newsDelete(@PathVariable("id") Long id){
+        mNewsJPA.delete(id);
+    }
+
 }
