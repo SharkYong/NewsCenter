@@ -30,7 +30,7 @@ public class UserEntity implements Serializable{
         this.u_id = u_id;
     }
 
-    public String getu_name() {
+    public String getU_name() {
         return u_name;
     }
 
@@ -38,7 +38,7 @@ public class UserEntity implements Serializable{
         this.u_name = u_name;
     }
 
-    public String getu_password() {
+    public String getU_password() {
         return u_password;
     }
 

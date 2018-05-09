@@ -34,8 +34,8 @@ public class UserController {
      */
     @PostMapping(value = "/register")
     public HttpResult<UserEntity> register(@RequestBody UserEntity entity){
-        String username = entity.getu_name();
-        String password = entity.getu_password();
+        String username = entity.getU_name();
+        String password = entity.getU_password();
 
         QUserEntity qUserEntity = QUserEntity.userEntity;
         JPAQuery<UserEntity> jpaQuery = new JPAQuery<>(mManager);
@@ -55,7 +55,7 @@ public class UserController {
             if (save != null){
                 httpResult.setCode(1);
                 httpResult.setMessage("注册成功!");
-                httpResult.setData(entity);
+                httpResult.setData(save);
             }else {
                 httpResult.setCode(-1);
                 httpResult.setMessage("注册失败!");
@@ -68,8 +68,8 @@ public class UserController {
 
     @PostMapping(value = "/login")
     public HttpResult<UserEntity> login(@RequestBody UserEntity userEntity){
-        String username = userEntity.getu_name();
-        String password = userEntity.getu_password();
+        String username = userEntity.getU_name();
+        String password = userEntity.getU_password();
 
         QUserEntity qUserEntity = QUserEntity.userEntity;
         JPAQuery<UserEntity> jpaQuery = new JPAQuery<>(mManager);
@@ -79,7 +79,7 @@ public class UserController {
                 .from(qUserEntity)
                 .where(qUserEntity.u_name.eq(username))
                 .fetch();
-        HttpResult httpResult = new HttpResult();
+        HttpResult<UserEntity> httpResult = new HttpResult<>();
         if (fetch == null || fetch.size() <= 0){
             //没有此账号，需要先登录
             httpResult.setCode(-1);
@@ -92,7 +92,7 @@ public class UserController {
             if (result != null && result.size() > 0){
                 httpResult.setCode(1);
                 httpResult.setMessage("登陆成功!");
-                httpResult.setData(userEntity);
+                httpResult.setData(result.get(0));
             }else {
                 httpResult.setCode(-1);
                 httpResult.setMessage("密码不正确");
